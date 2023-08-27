@@ -12,6 +12,7 @@ import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,6 +26,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.webviewprototype.ui.theme.WebViewPrototypeTheme
+
+const val DIVIDING_TEXT = "THIS_IS_SOME_DATA_THAT_YOU_NEED_SO_DONT_IGNORE_IT_"
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -69,16 +72,29 @@ fun Web() {
 
     // Adding a WebView inside AndroidView
     // with layout as full screen
-    AndroidView(factory = {
+    AndroidView(modifier = Modifier.fillMaxSize(), factory = {
         WebView(it).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
             settings.javaScriptEnabled = true
+            addJavascriptInterface(javaScriptInterface, "INTERFACE");
+
             webChromeClient = object : WebChromeClient() {
                 override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                    val message = consoleMessage?.message()
                     Log.d("WebView", "Console message: ${consoleMessage?.message()}")
+                    if (message?.contains(DIVIDING_TEXT) == true) {
+                        Log.d(
+                            "WebView",
+                            "True Console message: ${consoleMessage.message()}"
+                        )
+                        Log.d(
+                            "WebView",
+                            "True true Console message: ${consoleMessage.message().removePrefix(DIVIDING_TEXT)}"
+                        )
+                    }
                     return super.onConsoleMessage(consoleMessage)
                 }
             }
@@ -88,8 +104,10 @@ fun Web() {
                     view?.evaluateJavascript(
                         "" +
                                 "(function() { " +
-                                "console.log(document.getElementById('login').value);" +
-                                "return document.getElementById('login').value; " +
+                                "document.getElementById('login').addEventListener('click', function() {" +
+                                " console.log('${DIVIDING_TEXT}' + document.getElementById('username').value);" +
+                                "});" +
+                                "INTERFACE.getData('${DIVIDING_TEXT}' + document.getElementById('username').value);" +
                                 "})" +
                                 "();"
                     ) { result ->
