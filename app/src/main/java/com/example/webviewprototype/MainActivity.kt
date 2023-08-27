@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import android.view.ViewGroup
+import android.webkit.ConsoleMessage
+import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -45,13 +47,25 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+}
+
+interface JavaScriptInterface {
+    fun getData(data: String)
 }
 
 @Composable
 fun Web() {
 
+
+    val javaScriptInterface = object : JavaScriptInterface {
+        @JavascriptInterface
+        override fun getData(data: String) {
+            Log.d("WebView", "Getting data from web success: $data")
+        }
+    }
     // Declare a string that contains a url
-    val mUrl = "https://www.codehim.com/demo/sign-in-and-sign-up-form-template/"
+    val mUrl = "https://www.codehim.com/demo/login-page-in-html5-with-validation/"
 
     // Adding a WebView inside AndroidView
     // with layout as full screen
@@ -62,15 +76,23 @@ fun Web() {
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
             settings.javaScriptEnabled = true
-            webChromeClient = WebChromeClient()
+            webChromeClient = object : WebChromeClient() {
+                override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                    Log.d("WebView", "Console message: ${consoleMessage?.message()}")
+                    return super.onConsoleMessage(consoleMessage)
+                }
+            }
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
-                    view?.evaluateJavascript("" +
-                            "(function() { " +
-                                "return ('hello world'); " +
-                            "})" +
-                            "();") { result ->
+                    view?.evaluateJavascript(
+                        "" +
+                                "(function() { " +
+                                "console.log(document.getElementById('login').value);" +
+                                "return document.getElementById('login').value; " +
+                                "})" +
+                                "();"
+                    ) { result ->
                         Log.d("WebView", "Something's sent: $result")
                     }
                 }
